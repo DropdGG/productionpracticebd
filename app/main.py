@@ -3,11 +3,19 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse
 from typing import Optional
 import os
-
 from app.repositories.orm_repository import ORMStudentRepository, ORMOrgUnitRepository
 from app.repositories.native_repository import NativeStudentRepository, NativeOrgUnitRepository
+from app.models_orm import Base
+from app.config import config
+from sqlalchemy import create_engine
 
 app = FastAPI(title="Student Management System", description="Система учета студентов", version="1.0.0")
+
+@app.on_event("startup")
+def create_tables():
+    engine = create_engine(config.DATABASE_URL)
+    Base.metadata.create_all(bind=engine)
+    print("✅ Tables created successfully")
 
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "templates"))
 
