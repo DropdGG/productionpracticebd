@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Система учета студентов</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f0f2f5; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        h1 { text-align: center; color: #1a73e8; margin-bottom: 20px; }
+        .mode-bar { text-align: center; margin-bottom: 20px; padding: 10px; background: #fff; border-radius: 8px; }
+        .mode-active { background: #1a73e8; color: white; padding: 8px 20px; border-radius: 5px; display: inline-block; margin: 0 5px; }
+        .mode-inactive { background: #ccc; color: #333; padding: 8px 20px; border-radius: 5px; display: inline-block; margin: 0 5px; text-decoration: none; }
+        .panels { display: flex; gap: 20px; flex-wrap: wrap; }
+        .panel { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); flex: 1; min-width: 350px; }
+        .panel h2 { color: #333; margin-bottom: 15px; border-bottom: 2px solid #1a73e8; padding-bottom: 10px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
+        input, select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        button, .btn { background: #1a73e8; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; text-decoration: none; display: inline-block; }
+        .btn-danger { background: #dc3545; }
+        .btn-success { background: #28a745; }
+        .btn-secondary { background: #6c757d; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #f1f3f4; }
+        .details { padding: 15px; background: #e8f0fe; border-radius: 5px; margin-top: 15px; }
+        .tree-node { margin-left: 20px; padding: 5px; border-left: 2px solid #1a73e8; }
+        .message { padding: 10px; margin-top: 10px; border-radius: 5px; }
+        .message.success { background: #d4edda; color: #155724; }
+        .message.error { background: #f8d7da; color: #721c24; }
+        .versions-list { max-height: 200px; overflow-y: auto; margin-top: 10px; }
+        .version-item { padding: 8px; margin: 5px 0; background: #f1f3f4; border-radius: 4px; }
+        .version-current { background: #d4edda; border-left: 4px solid #28a745; padding: 8px; margin: 5px 0; border-radius: 4px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>📚 Система учета студентов</h1>
+    
+    <div class="mode-bar">
+        {% if mode == 'orm' %}
+            <span class="mode-active">ORM (SQLAlchemy)</span>
+            <a href="/?mode=native" class="mode-inactive">Native SQL (psycopg2)</a>
+        {% else %}
+            <a href="/?mode=orm" class="mode-inactive">ORM (SQLAlchemy)</a>
+            <span class="mode-active">Native SQL (psycopg2)</span>
+        {% endif %}
+    </div>
+    
+    <div class="panels">
+        <div class="panel">
+            <h2>➕ Создать студента</h2>
+            <form action="/students/create" method="post">
+                <input type="hidden" name="mode" value="{{ mode }}">
+                <div class="form-group">
+                    <label>ФИО</label>
+                    <input type="text" name="full_name" required>
+                </div>
+                <div class="form-group">
+                    <label>Дата рождения</label>
+                    <input type="date" name="birth_date" required>
+                </div>
+                <div class="form-group">
+                    <label>Номер студенческого</label>
+                    <input type="text" name="student_number" required>
+                </div>
+                <div class="form-group">
+                    <label>Группа</label>
+                    <input type="text" name="group_name" required>
+                </div>
+                <div class="form-group">
+                    <label>Год поступления</label>
+                    <input type="number" name="enrollment_year" required>
+                </div>
+                <div class="form-group">
+                    <label>Кафедра (ID)</label>
+                    <input type="number" name="org_unit_id" placeholder="4 - для кафедры ПО">
+                </div>
+                <button type="submit">Создать студента</button>
+            </form>
+            {% if create_message %}
+                <div class="message {{ create_message_type }}">{{ create_message }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="panel">
+            <h2>📋 Список студентов</h2>
+            <form action="/" method="get">
+                <input type="hidden" name="mode" value="{{ mode }}">
+                <div class="form-group">
+                    <label>Фильтр по группе</label>
+                    <input type="text" name="group_filter" value="{{ group_filter or '' }}">
+                </div>
+                <button type="submit">Поиск</button>
+                <a href="/?mode={{ mode }}" class="btn-secondary" style="margin-left: 10px;">Сброс</a>
+            </form>
+            
+            {% if students %}
+                <table>
+                    <thead>
+                        <tr><th>ФИО</th><th>№ студенческого</th><th>Группа</th><th>Год</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                    {% for s in students %}
+                        <tr>
+                            <td>{{ s.full_name }}</td>
+                            <td>{{ s.student_number }}</td>
+                            <td>{{ s.group_name }}</td>
+                            <td>{{ s.enrollment_year }}</td>
+                            <td><a href="/students/{{ s.id }}?mode={{ mode }}">Подробнее</a></td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div style="text-align:center; padding:20px;">Нет студентов</div>
+            {% endif %}
+        </div>
+        
+        {% if selected_student %}
+        <div class="panel">
+            <h2>ℹ️ Информация о студенте</h2>
+            <div class="details">
+                <strong>{{ selected_student.person.full_name }}</strong><br>
+                📅 Дата рождения: {{ selected_student.person.birth_date }}<br>
+                🎓 Студенческий: {{ selected_student.student_number }}<br>
+                👥 Группа: {{ selected_student.group_name }}<br>
+                📅 Год поступления: {{ selected_student.enrollment_year }}<br>
+                📞 Телефон: {{ selected_student.person.phone or 'не указан' }}<br>
+                ✉️ Email: {{ selected_student.person.email or 'не указан' }}
+            </div>
+            
+            <h3>📜 История версий</h3>
+            <div class="versions-list">
+                {% if versions %}
+                    {% for v in versions %}
+                        <div class="{% if v.version_number == current_version %}version-current{% else %}version-item{% endif %}">
+                            <a href="/students/{{ selected_student.id }}/version/{{ v.version_number }}?mode={{ mode }}">
+                                Версия {{ v.version_number }} - {{ v.changed_at.strftime('%Y-%m-%d %H:%M') }}
+                                {% if v.version_number == current_version %} (текущая){% endif %}
+                            </a>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <em>Нет истории версий</em>
+                {% endif %}
+            </div>
+            
+            <h3>✏️ Действия</h3>
+            <form action="/students/{{ selected_student.id }}/update" method="post" style="margin-top: 10px;">
+                <input type="hidden" name="mode" value="{{ mode }}">
+                <div class="form-group">
+                    <label>Новое ФИО</label>
+                    <input type="text" name="new_name" value="{{ selected_student.person.full_name }}" required>
+                </div>
+                <button type="submit" class="btn-success">Обновить ФИО (новая версия)</button>
+            </form>
+            
+            <form action="/students/{{ selected_student.id }}/delete" method="post" style="margin-top: 10px;" onsubmit="return confirm('Удалить студента?')">
+                <input type="hidden" name="mode" value="{{ mode }}">
+                <button type="submit" class="btn-danger">Удалить студента</button>
+            </form>
+            
+            {% if update_message %}
+                <div class="message {{ update_message_type }}">{{ update_message }}</div>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        <div class="panel">
+            <h2>🌳 Иерархия подразделений</h2>
+            <a href="/org-tree?mode={{ mode }}" class="btn">Загрузить дерево</a>
+            {% if org_tree %}
+                <div style="margin-top: 15px;">
+                    {% for node in org_tree %}
+                        <div class="tree-node-root">
+                            <strong>{{ node.name }}</strong> <span style="color:#666">({{ node.unit_type }})</span>
+                            {% if node.children %}
+                                <div>
+                                    {% for child in node.children %}
+                                        <div class="tree-node">
+                                            <strong>{{ child.name }}</strong> <span style="color:#666">({{ child.unit_type }})</span>
+                                            {% if child.children %}
+                                                <div>
+                                                    {% for grandchild in child.children %}
+                                                        <div class="tree-node">
+                                                            <strong>{{ grandchild.name }}</strong> <span style="color:#666">({{ grandchild.unit_type }})</span>
+                                                        </div>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+</body>
+</html>
