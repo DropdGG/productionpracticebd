@@ -13,12 +13,10 @@ def get_db_connection():
             database=config.DB_NAME,
             user=config.DB_USER,
             password=config.DB_PASSWORD,
-            cursor_factory=RealDictCursor,
-            client_encoding='UTF8'
+            cursor_factory=RealDictCursor
         )
     return psycopg2.connect(
         database_url,
         cursor_factory=RealDictCursor,
-        sslmode='require',
-        client_encoding='UTF8'
+        sslmode='require'
     )
