@@ -14,6 +14,7 @@ def get_db_connection():
             user=config.DB_USER,
             password=config.DB_PASSWORD,
             cursor_factory=RealDictCursor
+            client_encoding='UTF8'
         )
     return psycopg2.connect(
         database_url,
