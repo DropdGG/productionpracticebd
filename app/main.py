@@ -3,11 +3,16 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse
 from typing import Optional
 import os
+import sys
+import io
+
 from app.repositories.orm_repository import ORMStudentRepository, ORMOrgUnitRepository
 from app.repositories.native_repository import NativeStudentRepository, NativeOrgUnitRepository
 from app.models_orm import Base
 from app.config import config
 from sqlalchemy import create_engine
+
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 app = FastAPI(title="Student Management System", description="Система учета студентов", version="1.0.0")
 
@@ -17,7 +22,10 @@ def create_tables():
     Base.metadata.create_all(bind=engine)
     print("✅ Tables created successfully")
 
-templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "templates"))
+templates = Jinja2Templates(
+    directory=os.path.join(os.path.dirname(__file__), "templates"),
+    autoescape=True
+)
 
 def get_repositories(mode: str):
     if mode == 'orm':
@@ -38,20 +46,24 @@ async def index(
     student_repo, _ = get_repositories(mode)
     students = student_repo.get_all_students(group_filter if group_filter else None)
     
-    return templates.TemplateResponse("index.html", {
-        "request": request,
-        "mode": mode,
-        "students": students,
-        "group_filter": group_filter,
-        "create_message": create_message,
-        "create_message_type": create_message_type,
-        "update_message": update_message,
-        "update_message_type": update_message_type,
-        "selected_student": None,
-        "versions": None,
-        "current_version": None,
-        "org_tree": None
-    })
+    return templates.TemplateResponse(
+        "index.html", 
+        {
+            "request": request,
+            "mode": mode,
+            "students": students,
+            "group_filter": group_filter,
+            "create_message": create_message,
+            "create_message_type": create_message_type,
+            "update_message": update_message,
+            "update_message_type": update_message_type,
+            "selected_student": None,
+            "versions": None,
+            "current_version": None,
+            "org_tree": None
+        },
+        headers={"Content-Type": "text/html; charset=utf-8"}
+    )
 
 @app.get("/students/{student_id}")
 async def student_detail(
@@ -71,16 +83,20 @@ async def student_detail(
     
     all_students = student_repo.get_all_students()
     
-    return templates.TemplateResponse("index.html", {
-        "request": request,
-        "mode": mode,
-        "students": all_students,
-        "selected_student": student,
-        "versions": versions,
-        "current_version": current_version,
-        "group_filter": None,
-        "org_tree": None
-    })
+    return templates.TemplateResponse(
+        "index.html", 
+        {
+            "request": request,
+            "mode": mode,
+            "students": all_students,
+            "selected_student": student,
+            "versions": versions,
+            "current_version": current_version,
+            "group_filter": None,
+            "org_tree": None
+        },
+        headers={"Content-Type": "text/html; charset=utf-8"}
+    )
 
 @app.get("/students/{student_id}/version/{version_number}")
 async def student_version(
@@ -100,16 +116,20 @@ async def student_version(
     
     all_students = student_repo.get_all_students()
     
-    return templates.TemplateResponse("index.html", {
-        "request": request,
-        "mode": mode,
-        "students": all_students,
-        "selected_student": student,
-        "versions": student_repo.get_person_versions(student['person']['id']),
-        "current_version": version_number,
-        "group_filter": None,
-        "org_tree": None
-    })
+    return templates.TemplateResponse(
+        "index.html", 
+        {
+            "request": request,
+            "mode": mode,
+            "students": all_students,
+            "selected_student": student,
+            "versions": student_repo.get_person_versions(student['person']['id']),
+            "current_version": version_number,
+            "group_filter": None,
+            "org_tree": None
+        },
+        headers={"Content-Type": "text/html; charset=utf-8"}
+    )
 
 @app.post("/students/create")
 async def create_student(
@@ -139,9 +159,17 @@ async def create_student(
             "study_form": "full-time"
         }
         student_repo.create_student(student_data)
-        return RedirectResponse(url=f"/?mode={mode}&create_message=Студент+создан&create_message_type=success", status_code=303)
+        return RedirectResponse(
+            url=f"/?mode={mode}&create_message=Студент+создан&create_message_type=success", 
+            status_code=303,
+            headers={"Content-Type": "text/html; charset=utf-8"}
+        )
     except Exception as e:
-        return RedirectResponse(url=f"/?mode={mode}&create_message=Ошибка:+{str(e)}&create_message_type=error", status_code=303)
+        return RedirectResponse(
+            url=f"/?mode={mode}&create_message=Ошибка:+{str(e)}&create_message_type=error", 
+            status_code=303,
+            headers={"Content-Type": "text/html; charset=utf-8"}
+        )
 
 @app.post("/students/{student_id}/update")
 async def update_student(
@@ -155,12 +183,14 @@ async def update_student(
         new_version = student_repo.update_student(student_id, {"full_name": new_name})
         return RedirectResponse(
             url=f"/students/{student_id}?mode={mode}&update_message=Обновлено!+Новая+версия+{new_version}&update_message_type=success",
-            status_code=303
+            status_code=303,
+            headers={"Content-Type": "text/html; charset=utf-8"}
         )
     except Exception as e:
         return RedirectResponse(
             url=f"/students/{student_id}?mode={mode}&update_message=Ошибка:+{str(e)}&update_message_type=error",
-            status_code=303
+            status_code=303,
+            headers={"Content-Type": "text/html; charset=utf-8"}
         )
 
 @app.post("/students/{student_id}/delete")
@@ -172,9 +202,17 @@ async def delete_student(
     
     try:
         student_repo.delete_student(student_id)
-        return RedirectResponse(url=f"/?mode={mode}&create_message=Студент+удален&create_message_type=success", status_code=303)
+        return RedirectResponse(
+            url=f"/?mode={mode}&create_message=Студент+удален&create_message_type=success", 
+            status_code=303,
+            headers={"Content-Type": "text/html; charset=utf-8"}
+        )
     except Exception as e:
-        return RedirectResponse(url=f"/?mode={mode}&create_message=Ошибка:+{str(e)}&create_message_type=error", status_code=303)
+        return RedirectResponse(
+            url=f"/?mode={mode}&create_message=Ошибка:+{str(e)}&create_message_type=error", 
+            status_code=303,
+            headers={"Content-Type": "text/html; charset=utf-8"}
+        )
 
 @app.get("/org-tree")
 async def org_tree(
@@ -187,16 +225,20 @@ async def org_tree(
     tree_data = org_repo.get_org_unit_tree()
     students = student_repo.get_all_students()
     
-    return templates.TemplateResponse("index.html", {
-        "request": request,
-        "mode": mode,
-        "students": students,
-        "org_tree": tree_data.get('children', []),
-        "group_filter": None,
-        "selected_student": None,
-        "versions": None,
-        "current_version": None
-    })
+    return templates.TemplateResponse(
+        "index.html", 
+        {
+            "request": request,
+            "mode": mode,
+            "students": students,
+            "org_tree": tree_data.get('children', []),
+            "group_filter": None,
+            "selected_student": None,
+            "versions": None,
+            "current_version": None
+        },
+        headers={"Content-Type": "text/html; charset=utf-8"}
+    )
 
 @app.get("/health")
 async def health_check():
@@ -204,6 +246,5 @@ async def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-    import os
     port = int(os.getenv("PORT", 8000))
     uvicorn.run("app.main:app", host="0.0.0.0", port=port)
