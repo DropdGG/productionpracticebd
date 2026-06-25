@@ -6,9 +6,10 @@
     <title>Система учета студентов</title>
     <style>
         body {
-            font-family: Arial;
+            font-family: Arial, sans-serif;
             background: #f5f5f5;
             padding: 20px;
+            margin: 0;
         }
 
         .container {
@@ -19,6 +20,8 @@
         h1 {
             text-align: center;
             color: #1a73e8;
+            font-size: 24px;
+            margin-bottom: 20px;
         }
 
         .mode-bar {
@@ -26,21 +29,22 @@
             margin: 20px 0;
         }
 
-        .mode-active,
-        .mode-inactive {
-            padding: 8px 20px;
-            border-radius: 5px;
-            text-decoration: none;
-        }
-
         .mode-active {
             background: #1a73e8;
             color: white;
+            padding: 8px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            display: inline-block;
         }
 
         .mode-inactive {
             background: #ddd;
             color: #333;
+            padding: 8px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            display: inline-block;
         }
 
         .panels {
@@ -54,40 +58,53 @@
             padding: 20px;
             border-radius: 8px;
             flex: 1;
-            min-width: 300px;
+            min-width: 280px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
         }
 
         .panel h2 {
+            font-size: 18px;
             border-bottom: 2px solid #1a73e8;
-            padding-bottom: 10px;
+            padding-bottom: 8px;
+            margin-top: 0;
+        }
+
+        .panel h3 {
+            font-size: 16px;
+            margin-top: 16px;
+            margin-bottom: 8px;
         }
 
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
 
         label {
             display: block;
             font-weight: bold;
-            margin-bottom: 5px;
+            font-size: 14px;
+            margin-bottom: 4px;
         }
 
         input,
         select {
             width: 100%;
-            padding: 8px;
+            padding: 6px 8px;
             border: 1px solid #ccc;
             border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
         }
 
         button,
         .btn {
             background: #1a73e8;
             color: white;
-            padding: 8px 15px;
+            padding: 6px 14px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
+            font-size: 14px;
             text-decoration: none;
             display: inline-block;
         }
@@ -107,14 +124,14 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 15px;
+            font-size: 14px;
         }
 
         th,
         td {
-            padding: 8px;
+            padding: 6px 8px;
             text-align: left;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid #eee;
         }
 
         th {
@@ -123,15 +140,17 @@
 
         .details {
             background: #e8f0fe;
-            padding: 15px;
+            padding: 12px;
             border-radius: 5px;
-            margin-top: 15px;
+            font-size: 14px;
+            line-height: 1.6;
         }
 
         .message {
-            padding: 10px;
-            border-radius: 5px;
-            margin-top: 10px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin-top: 8px;
+            font-size: 14px;
         }
 
         .message.success {
@@ -144,35 +163,62 @@
             color: #721c24;
         }
 
+        .versions-list {
+            max-height: 180px;
+            overflow-y: auto;
+            font-size: 14px;
+        }
+
         .version-item {
             background: #f1f3f4;
-            padding: 8px;
-            margin: 5px 0;
+            padding: 6px 10px;
+            margin: 4px 0;
             border-radius: 4px;
         }
 
         .version-current {
             background: #d4edda;
             border-left: 4px solid #28a745;
-            padding: 8px;
-            margin: 5px 0;
+            padding: 6px 10px;
+            margin: 4px 0;
             border-radius: 4px;
         }
 
-        .versions-list {
-            max-height: 200px;
-            overflow-y: auto;
-            margin-top: 10px;
+        .version-item a,
+        .version-current a {
+            text-decoration: none;
+            color: #333;
+            display: block;
         }
 
         .tree {
-            margin-top: 15px;
+            margin-top: 10px;
+            font-size: 14px;
         }
 
         .tree-node {
-            margin-left: 20px;
-            padding: 5px;
+            margin-left: 18px;
+            padding: 3px 0 3px 10px;
             border-left: 2px solid #1a73e8;
+        }
+
+        .text-muted {
+            color: #999;
+        }
+
+        .mt-10 {
+            margin-top: 10px;
+        }
+
+        .mb-10 {
+            margin-bottom: 10px;
+        }
+
+        .flex {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
         }
     </style>
 </head>
@@ -183,11 +229,11 @@
 
         <div class="mode-bar">
             {% if mode == 'orm' %}
-            <span class="mode-active">ORM (SQLAlchemy)</span>
-            <a href="/?mode=native" class="mode-inactive">Native SQL (psycopg2)</a>
+            <span class="mode-active">ORM</span>
+            <a href="/?mode=native" class="mode-inactive">Native SQL</a>
             {% else %}
-            <a href="/?mode=orm" class="mode-inactive">ORM (SQLAlchemy)</a>
-            <span class="mode-active">Native SQL (psycopg2)</span>
+            <a href="/?mode=orm" class="mode-inactive">ORM</a>
+            <span class="mode-active">Native SQL</span>
             {% endif %}
         </div>
 
@@ -218,7 +264,7 @@
                     </div>
                     <div class="form-group">
                         <label>Кафедра (ID)</label>
-                        <input type="number" name="org_unit_id" placeholder="4 - для кафедры ПО">
+                        <input type="number" name="org_unit_id" placeholder="4 — кафедра ПО">
                     </div>
                     <button type="submit">Создать</button>
                 </form>
@@ -229,11 +275,11 @@
 
             <div class="panel">
                 <h2>Список студентов</h2>
-                <form action="/" method="get">
+                <form action="/" method="get" class="flex">
                     <input type="hidden" name="mode" value="{{ mode }}">
-                    <div class="form-group">
-                        <label>Фильтр по группе</label>
-                        <input type="text" name="group_filter" value="{{ group_filter or '' }}">
+                    <div style="flex:1; min-width:120px;">
+                        <input type="text" name="group_filter" value="{{ group_filter or '' }}"
+                            placeholder="Фильтр по группе">
                     </div>
                     <button type="submit">Поиск</button>
                     <a href="/?mode={{ mode }}" class="btn-secondary">Сброс</a>
@@ -263,7 +309,7 @@
                     </tbody>
                 </table>
                 {% else %}
-                <p>Нет студентов</p>
+                <p class="text-muted">Нет студентов</p>
                 {% endif %}
             </div>
 
@@ -285,29 +331,33 @@
                     <div
                         class="{% if v.version_number == current_version %}version-current{% else %}version-item{% endif %}">
                         <a href="/students/{{ selected_student.id }}/version/{{ v.version_number }}?mode={{ mode }}">
-                            Версия {{ v.version_number }} - {{ v.changed_at.strftime('%Y-%m-%d %H:%M') }}
-                            {% if v.version_number == current_version %} (текущая){% endif %}
+                            Версия {{ v.version_number }} — {{ v.changed_at.strftime('%Y-%m-%d %H:%M') }}
+                            {% if v.version_number == current_version %}(текущая){% endif %}
                         </a>
                     </div>
                     {% endfor %}
                     {% else %}
-                    <em>Нет истории</em>
+                    <span class="text-muted">Нет истории</span>
                     {% endif %}
                 </div>
 
                 <h3>Действия</h3>
-                <form action="/students/{{ selected_student.id }}/update" method="post" style="margin-top: 10px;">
+                <form action="/students/{{ selected_student.id }}/update" method="post" class="mt-10">
                     <input type="hidden" name="mode" value="{{ mode }}">
                     <div class="form-group">
                         <label>Новое ФИО</label>
                         <input type="text" name="new_name" value="{{ selected_student.person.full_name }}" required>
                     </div>
-                    <button type="submit" class="btn-success">Обновить ФИО</button>
+                    <div class="flex">
+                        <button type="submit" class="btn-success">Обновить</button>
+                        <a href="/?mode={{ mode }}" class="btn-secondary">Назад</a>
+                    </div>
                 </form>
 
-                <form action="/students/{{ selected_student.id }}/delete" method="post" style="margin-top: 10px;">
+                <form action="/students/{{ selected_student.id }}/delete" method="post" class="mt-10">
                     <input type="hidden" name="mode" value="{{ mode }}">
-                    <button type="submit" class="btn-danger">Удалить</button>
+                    <button type="submit" class="btn-danger"
+                        onclick="return confirm('Удалить студента?')">Удалить</button>
                 </form>
 
                 {% if update_message %}
@@ -323,17 +373,19 @@
                 <div class="tree">
                     {% for node in org_tree %}
                     <div>
-                        <strong>{{ node.name }}</strong> ({{ node.unit_type }})
+                        <strong>{{ node.name }}</strong> <span class="text-muted">({{ node.unit_type }})</span>
                         {% if node.children %}
                         <div>
                             {% for child in node.children %}
                             <div class="tree-node">
-                                <strong>{{ child.name }}</strong> ({{ child.unit_type }})
+                                <strong>{{ child.name }}</strong> <span class="text-muted">({{ child.unit_type
+                                    }})</span>
                                 {% if child.children %}
                                 <div>
                                     {% for grandchild in child.children %}
                                     <div class="tree-node">
-                                        <strong>{{ grandchild.name }}</strong> ({{ grandchild.unit_type }})
+                                        <strong>{{ grandchild.name }}</strong> <span class="text-muted">({{
+                                            grandchild.unit_type }})</span>
                                     </div>
                                     {% endfor %}
                                 </div>
